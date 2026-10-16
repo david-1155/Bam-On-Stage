@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #0A0A10;
+    color: #F8FAFC;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Custom neon glow utilities */
+.glow-cyan {
+  box-shadow: 0 0 20px -5px rgba(0, 229, 255, 0.4);
+}
+
+.glow-fuchsia {
+  box-shadow: 0 0 20px -5px rgba(255, 79, 216, 0.4);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px -5px rgba(83, 109, 255, 0.4);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px -5px rgba(163, 255, 111, 0.4);
+}
+
+.border-glow-cyan {
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.border-glow-fuchsia {
+  border-color: rgba(255, 79, 216, 0.4);
+}
+
+/* Subtle futuristic background grid */
+.cyber-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Custom modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F1D36;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2D2A4A;
+}

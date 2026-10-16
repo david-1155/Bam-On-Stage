@@ -1,0 +1,8 @@
+{
+  "name": "BAM ON STAGE",
+  "description": "Plataforma educativa interactiva donde el talento estudiantil encuentra su escenario para compartir conocimientos y reservar asesorías.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
