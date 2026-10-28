@@ -13,36 +13,59 @@ export const AuthProvider = ({ children }) => {
     if (isSupabase && supabase) {
       // Supabase Auth listener
       const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Obtener perfil
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*, user_roles(role)')
-            .eq('id', session.user.id)
-            .single();
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            let role = 'estudiante';
+            let fullName = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+            let grade = session.user.user_metadata?.grade || 'Estudiante';
+            let avatarUrl = session.user.user_metadata?.avatar_url || null;
 
-          const role = profile?.user_roles?.[0]?.role || 'estudiante';
-          setCurrentUser({
-            id: session.user.id,
-            email: session.user.email,
-            fullName: profile?.full_name || session.user.email,
-            grade: profile?.grade || 'Estudiante',
-            role: role,
-            avatarUrl: profile?.avatar_url
-          });
-        } else {
-          setCurrentUser(null);
+            // Intentar leer perfil si la tabla profiles existe
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('*, user_roles(role)')
+                .eq('id', session.user.id)
+                .single();
+
+              if (profile) {
+                fullName = profile.full_name || fullName;
+                grade = profile.grade || grade;
+                avatarUrl = profile.avatar_url || avatarUrl;
+                role = profile.user_roles?.[0]?.role || role;
+              }
+            } catch (profileErr) {
+              console.warn('Tabla profiles aún no disponible o sin registro, usando metadatos de sesión:', profileErr);
+            }
+
+            setCurrentUser({
+              id: session.user.id,
+              email: session.user.email,
+              fullName,
+              grade,
+              role,
+              avatarUrl
+            });
+          } else {
+            // Si no hay sesión activa en Supabase, iniciar con el usuario de muestra para facilitar la navegación
+            const stored = demoStore.getCurrentUser();
+            setCurrentUser(stored || DEMO_USERS[0]);
+          }
+        } catch (err) {
+          console.warn('Error verificando sesión en Supabase:', err);
+          const stored = demoStore.getCurrentUser();
+          setCurrentUser(stored || DEMO_USERS[0]);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       };
+
       checkSession();
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           checkSession();
-        } else {
-          setCurrentUser(null);
         }
       });
       return () => subscription.unsubscribe();
@@ -56,15 +79,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     if (isSupabase && supabase) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        // Si no se encuentra en Supabase Auth, revisar si es una cuenta de prueba
+        const demoMatch = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (demoMatch) {
+          demoStore.setCurrentUser(demoMatch);
+          setCurrentUser(demoMatch);
+          return demoMatch;
+        }
+        throw err;
+      }
     } else {
       // Modo Demo: Buscar en usuarios demo
       const users = demoStore.getUsers();
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (!user) {
-        // Permitir inicio de sesión creando perfil temporal si no existe
         const newUser = {
           id: 'user-' + Date.now(),
           email,
@@ -92,6 +125,15 @@ export const AuthProvider = ({ children }) => {
         }
       });
       if (error) throw error;
+      
+      const userObj = {
+        id: data.user?.id || 'user-' + Date.now(),
+        email,
+        fullName,
+        grade,
+        role: 'estudiante'
+      };
+      setCurrentUser(userObj);
       return data;
     } else {
       // Demo mode signup
@@ -105,7 +147,6 @@ export const AuthProvider = ({ children }) => {
       };
       const users = demoStore.getUsers();
       users.push(newUser);
-      demoStore.saveUsers ? demoStore.saveUsers(users) : null;
       demoStore.setCurrentUser(newUser);
       setCurrentUser(newUser);
       return newUser;
@@ -114,14 +155,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     if (isSupabase && supabase) {
-      await supabase.auth.signOut();
-    } else {
-      demoStore.setCurrentUser(null);
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Error cerrando sesión en Supabase:', err);
+      }
     }
+    demoStore.setCurrentUser(null);
     setCurrentUser(null);
   };
 
-  // Selector rápido de usuario demo para pruebas sin esfuerzo
+  // Selector de usuario demo para pruebas sin esfuerzo
   const switchDemoUser = (userTypeOrId) => {
     const users = demoStore.getUsers();
     let target = users.find(u => u.id === userTypeOrId || u.role === userTypeOrId);

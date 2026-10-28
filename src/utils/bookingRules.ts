@@ -100,3 +100,125 @@ export function formatCurrencyCOP(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+export interface AvailableDateOption {
+  dateStr: string; // "YYYY-MM-DD"
+  dayName: string; // "Lunes"
+  dayIndex: number; // 0..6
+  formattedShort: string; // "Lun, 2 Nov"
+  formattedLong: string; // "Lunes, 2 de Noviembre"
+  times: string[]; // ["15:30", "16:30", "17:30"]
+}
+
+export interface InstructorScheduleDay {
+  day: string;
+  dayIndex?: number;
+  times: string[];
+}
+
+const SPANISH_DAY_INDEX_MAP: Record<string, number> = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  miercoles: 3,
+  miércoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sabado: 6,
+  sábado: 6
+};
+
+const SPANISH_DAY_NAMES = [
+  'Domingo',
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado'
+];
+
+const SPANISH_MONTH_NAMES_SHORT = [
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+];
+
+const SPANISH_MONTH_NAMES_LONG = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+/**
+ * Genera la lista estricta de fechas disponibles en las próximas semanas
+ * basándose únicamente en los días y horarios estipulados por el instructor.
+ * El cliente no podrá seleccionar días fuera de esta lista.
+ */
+export function getInstructorAvailableDates(
+  schedule?: InstructorScheduleDay[],
+  daysHorizon = 28,
+  referenceDate = new Date()
+): AvailableDateOption[] {
+  // Horario por defecto si el instructor no tiene configurado schedule
+  const effectiveSchedule: InstructorScheduleDay[] = (Array.isArray(schedule) && schedule.length > 0)
+    ? schedule
+    : [
+        { day: 'Lunes', dayIndex: 1, times: ['15:00', '16:00', '17:00'] },
+        { day: 'Miércoles', dayIndex: 3, times: ['15:00', '16:00', '17:00'] },
+        { day: 'Viernes', dayIndex: 5, times: ['14:00', '15:00', '16:00'] }
+      ];
+
+  // Mapa de días autorizados con sus horarios
+  const allowedDayMap = new Map<number, { dayName: string; times: string[] }>();
+  for (const s of effectiveSchedule) {
+    if (!s || !Array.isArray(s.times) || s.times.length === 0) continue;
+    let idx = typeof s.dayIndex === 'number' ? s.dayIndex : -1;
+    if (idx < 0 || idx > 6) {
+      const normalizedDay = (s.day || '').trim().toLowerCase();
+      if (normalizedDay in SPANISH_DAY_INDEX_MAP) {
+        idx = SPANISH_DAY_INDEX_MAP[normalizedDay];
+      }
+    }
+    if (idx >= 0 && idx <= 6) {
+      allowedDayMap.set(idx, {
+        dayName: s.day || SPANISH_DAY_NAMES[idx],
+        times: [...s.times]
+      });
+    }
+  }
+
+  const results: AvailableDateOption[] = [];
+  const base = new Date(referenceDate);
+  base.setHours(0, 0, 0, 0);
+
+  // Comenzar desde el día siguiente para dar margen prudencial de agendamiento
+  for (let offset = 1; offset <= daysHorizon; offset++) {
+    const candidate = new Date(base);
+    candidate.setDate(base.getDate() + offset);
+
+    const dayOfWeek = candidate.getDay();
+    const allowed = allowedDayMap.get(dayOfWeek);
+
+    if (allowed && allowed.times.length > 0) {
+      const year = candidate.getFullYear();
+      const monthIndex = candidate.getMonth();
+      const monthNum = String(monthIndex + 1).padStart(2, '0');
+      const dayNum = String(candidate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${monthNum}-${dayNum}`;
+
+      const shortDayName = allowed.dayName.slice(0, 3);
+      const monthShort = SPANISH_MONTH_NAMES_SHORT[monthIndex];
+      const monthLong = SPANISH_MONTH_NAMES_LONG[monthIndex];
+
+      results.push({
+        dateStr,
+        dayName: allowed.dayName,
+        dayIndex: dayOfWeek,
+        formattedShort: `${shortDayName}, ${candidate.getDate()} ${monthShort}`,
+        formattedLong: `${allowed.dayName}, ${candidate.getDate()} de ${monthLong}`,
+        times: allowed.times
+      });
+    }
+  }
+
+  return results;
+}

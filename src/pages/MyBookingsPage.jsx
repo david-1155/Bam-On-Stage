@@ -14,7 +14,8 @@ import {
   Star,
   Sparkles,
   RotateCcw,
-  MessageSquare
+  MessageSquare,
+  CheckSquare
 } from 'lucide-react';
 
 export default function MyBookingsPage() {
@@ -136,12 +137,21 @@ export default function MyBookingsPage() {
           </p>
         </div>
 
-        <Link
-          to="/talentos"
-          className="px-4 py-2.5 rounded-xl bg-[#00E5FF] text-[#0A0A10] font-bold text-xs hover:bg-[#00E5FF]/90 transition-all shadow-[0_0_15px_rgba(0,229,255,0.3)] shrink-0"
-        >
-          Solicitar nueva asesoría
-        </Link>
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <Link
+            to="/tareas"
+            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs transition-all flex items-center gap-2"
+          >
+            <CheckSquare className="w-4 h-4 text-[#00E5FF]" />
+            <span>Mis Tareas</span>
+          </Link>
+          <Link
+            to="/talentos"
+            className="px-4 py-2.5 rounded-xl bg-[#00E5FF] text-[#0A0A10] font-bold text-xs hover:bg-[#00E5FF]/90 transition-all shadow-[0_0_15px_rgba(0,229,255,0.3)] shrink-0"
+          >
+            Solicitar nueva asesoría
+          </Link>
+        </div>
       </div>
 
       {actionNotice && (

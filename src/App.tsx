@@ -22,6 +22,8 @@ import ScheduleAvailabilityPage from './pages/ScheduleAvailabilityPage.jsx';
 import LocationsPage from './pages/LocationsPage.jsx';
 import BookingRequestPage from './pages/BookingRequestPage.jsx';
 import MyBookingsPage from './pages/MyBookingsPage.jsx';
+import TasksPage from './pages/TasksPage.jsx';
+import ApplyInstructorPage from './pages/ApplyInstructorPage.jsx';
 import InstructorDashboardPage from './pages/InstructorDashboardPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -84,6 +86,9 @@ function MainLayout() {
           <Route path="/lugares" element={<LocationsPage />} />
           <Route path="/reservar/:instructorId" element={<BookingRequestPage />} />
           <Route path="/mis-reservas" element={<MyBookingsPage />} />
+          <Route path="/tareas" element={<TasksPage />} />
+          <Route path="/dar-refuerzos" element={<ApplyInstructorPage />} />
+          <Route path="/postularse" element={<ApplyInstructorPage />} />
           <Route path="/instructor" element={<InstructorDashboardPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/login" element={<LoginPage />} />

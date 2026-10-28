@@ -17,7 +17,9 @@ import {
   User,
   LogOut,
   X,
-  Sparkles
+  Sparkles,
+  CheckSquare,
+  GraduationCap
 } from 'lucide-react';
 
 export default function SidebarDrawer({ isOpen, onClose }) {
@@ -232,6 +234,30 @@ export default function SidebarDrawer({ isOpen, onClose }) {
                   >
                     <Calendar className="w-4 h-4 text-[#FF4FD8]" />
                     Mis reservas
+                  </Link>
+
+                  <Link
+                    to="/tareas"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      isActive('/tareas')
+                        ? 'bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <CheckSquare className="w-4 h-4 text-[#00E5FF]" />
+                    Tareas y asignaciones
+                  </Link>
+
+                  <Link
+                    to="/dar-refuerzos"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      isActive('/dar-refuerzos')
+                        ? 'bg-[#A3FF6F]/20 text-[#A3FF6F] border border-[#A3FF6F]/40 shadow-[0_0_12px_rgba(163,255,111,0.25)]'
+                        : 'text-[#A3FF6F] hover:bg-[#A3FF6F]/10'
+                    }`}
+                  >
+                    <GraduationCap className="w-4 h-4 text-[#A3FF6F]" />
+                    Inscribirme para dar refuerzos
                   </Link>
 
                   <Link

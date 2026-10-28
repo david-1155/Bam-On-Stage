@@ -52,7 +52,7 @@ export default function HomePage() {
               </p>
 
               {/* Botones de acción principales */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
                 <Link
                   to="/talentos"
                   className="px-6 py-3.5 rounded-xl font-bold text-sm text-[#0A0A10] bg-[#00E5FF] hover:bg-[#00E5FF]/90 transition-all duration-200 shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:scale-105 flex items-center gap-2"
@@ -66,6 +66,14 @@ export default function HomePage() {
                   className="px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-white/5 hover:bg-white/10 border border-white/15 transition-all duration-200 hover:border-[#FF4FD8]/60 flex items-center gap-2"
                 >
                   <span>Descubrir áreas</span>
+                </Link>
+
+                <Link
+                  to="/dar-refuerzos"
+                  className="px-6 py-3.5 rounded-xl font-bold text-sm text-[#A3FF6F] bg-[#A3FF6F]/10 hover:bg-[#A3FF6F]/20 border border-[#A3FF6F]/40 transition-all duration-200 shadow-[0_0_20px_rgba(163,255,111,0.25)] hover:scale-105 flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4 text-[#A3FF6F]" />
+                  <span>Quiero dar refuerzos</span>
                 </Link>
               </div>
 
@@ -251,7 +259,57 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. CALL TO ACTION FINAL */}
+      {/* 5. SECCIÓN ESPECIAL: INSCRIBIRSE PARA DAR REFUERZOS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative rounded-3xl p-8 sm:p-12 overflow-hidden bg-gradient-to-br from-[#121020] via-[#1a1436] to-[#0d162a] border border-[#A3FF6F]/30 shadow-[0_0_35px_rgba(163,255,111,0.12)]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-8 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#A3FF6F]/15 border border-[#A3FF6F]/30 text-xs text-[#A3FF6F] font-bold uppercase tracking-wider">
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Convocatoria Abierta para Estudiantes</span>
+              </div>
+              <h2 className="font-display font-black text-2xl sm:text-4xl text-white">
+                ¿Dominas una materia o tienes un talento? <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#A3FF6F] via-[#00E5FF] to-[#FF4FD8]">
+                  Inscríbete para dar refuerzos y genera ingresos
+                </span>
+              </h2>
+              <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+                Elige en cuál de las 11 áreas quieres dar refuerzos (matemáticas, programación, inglés, ciencias, arte, música y más), estipula tus propios días y horarios de disponibilidad, y fija tu tarifa en pesos colombianos.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="font-bold text-[#A3FF6F] block text-sm">1. Elige tu Área</span>
+                  <span className="text-slate-400 text-[11px]">Enfócate en la materia o habilidad que mejor dominas.</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="font-bold text-[#00E5FF] block text-sm">2. Fija tu Horario</span>
+                  <span className="text-slate-400 text-[11px]">Los estudiantes solo reservarán en tus franjas autorizadas.</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                  <span className="font-bold text-[#FF4FD8] block text-sm">3. Gana en COP</span>
+                  <span className="text-slate-400 text-[11px]">Establece tus tarifas justas por cada sesión de 60 minutos.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 flex flex-col items-center justify-center gap-4 text-center">
+              <Link
+                to="/dar-refuerzos"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl font-display font-black text-sm text-[#0A0A10] bg-[#A3FF6F] hover:bg-[#A3FF6F]/90 transition-all duration-200 shadow-[0_0_25px_rgba(163,255,111,0.4)] hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-[#0A0A10]" />
+                <span>Inscribirme para Dar Refuerzos</span>
+              </Link>
+              <p className="text-[11px] text-slate-400">
+                Aprobación inmediata en la plataforma colegial
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. CALL TO ACTION FINAL */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative rounded-3xl p-8 sm:p-12 overflow-hidden bg-gradient-to-r from-[#17132F] via-[#101935] to-[#121A28] border border-white/15 text-center space-y-6">
           <div className="max-w-2xl mx-auto space-y-4">

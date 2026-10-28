@@ -110,6 +110,15 @@ export default function SearchModal({ isOpen, onClose }) {
                 >
                   Inglés
                 </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    navigate('/tareas');
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-[#00E5FF]/15 text-[#00E5FF] hover:bg-[#00E5FF]/25 border border-[#00E5FF]/30 font-semibold"
+                >
+                  ✓ Tareas
+                </button>
               </div>
             </div>
           ) : filteredInstructors.length === 0 && filteredAreas.length === 0 ? (

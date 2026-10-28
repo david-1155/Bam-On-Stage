@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { demoStore } from '../services/demoStore.js';
@@ -6,7 +6,8 @@ import {
   validateEmail,
   isDateInPast,
   isSlotConflicting,
-  formatCurrencyCOP
+  formatCurrencyCOP,
+  getInstructorAvailableDates
 } from '../utils/bookingRules.ts';
 import {
   ArrowLeft,
@@ -52,7 +53,30 @@ export default function BookingRequestPage() {
     }
   }, [currentUser]);
 
-  // Set default topic and mode from instructor
+  // Fechas y horarios estipulados por el instructor
+  const availableDateOptions = useMemo(() => {
+    if (!instructor) return [];
+    return getInstructorAvailableDates(instructor.availabilitySchedule);
+  }, [instructor]);
+
+  // Reservas existentes para verificar conflictos
+  const existingBookings = useMemo(() => {
+    if (!instructor) return [];
+    return demoStore.getBookings().filter(b => b.instructorId === instructor.id);
+  }, [instructor]);
+
+  // Opción de fecha seleccionada actualmente
+  const currentDateOption = useMemo(() => {
+    if (!availableDateOptions.length) return null;
+    return availableDateOptions.find(d => d.dateStr === bookingDate) || availableDateOptions[0];
+  }, [availableDateOptions, bookingDate]);
+
+  // Horarios estipulados para la fecha seleccionada
+  const stipulatedTimesForDate = useMemo(() => {
+    return currentDateOption?.times || [];
+  }, [currentDateOption]);
+
+  // Set default topic, mode, stipulated date and stipulated time from instructor
   useEffect(() => {
     if (instructor) {
       if (instructor.topics?.length > 0 && !selectedTopic) {
@@ -64,13 +88,32 @@ export default function BookingRequestPage() {
         setSelectedMode('presencial');
       }
       
-      // Default to tomorrow's date
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const isoTomorrow = tomorrow.toISOString().split('T')[0];
-      setBookingDate(isoTomorrow);
+      // Inicializar con la primera fecha estipulada disponible
+      if (availableDateOptions.length > 0) {
+        const firstDate = availableDateOptions[0];
+        setBookingDate((prev) => {
+          const exists = availableDateOptions.some(d => d.dateStr === prev);
+          return exists ? prev : firstDate.dateStr;
+        });
+
+        setBookingTime((prev) => {
+          if (firstDate.times.includes(prev)) return prev;
+          return firstDate.times[0] || '';
+        });
+      }
     }
-  }, [instructor]);
+  }, [instructor, availableDateOptions]);
+
+  // Cambiar de fecha estipulada
+  const handleSelectDate = (newDateStr) => {
+    setBookingDate(newDateStr);
+    const dateObj = availableDateOptions.find(d => d.dateStr === newDateStr);
+    if (dateObj && dateObj.times.length > 0) {
+      if (!dateObj.times.includes(bookingTime)) {
+        setBookingTime(dateObj.times[0]);
+      }
+    }
+  };
 
   if (!instructor) {
     return (
@@ -83,12 +126,6 @@ export default function BookingRequestPage() {
       </div>
     );
   }
-
-  // Get current date for min attribute
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  // Available times for the instructor
-  const availableTimes = ['14:00', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'];
 
   const selectedTopicObj = instructor.topics.find(t => t.name === selectedTopic);
   const sessionPrice = selectedTopicObj?.priceCop || instructor.basePriceCop;
@@ -133,8 +170,19 @@ export default function BookingRequestPage() {
       return;
     }
 
+    // Validar que la fecha y hora seleccionada coincidan exactamente con lo estipulado
+    const validDateOption = availableDateOptions.find(d => d.dateStr === bookingDate);
+    if (!validDateOption) {
+      setErrorMsg('La fecha seleccionada no corresponde a los días de atención estipulados por el instructor.');
+      return;
+    }
+
+    if (!validDateOption.times.includes(bookingTime)) {
+      setErrorMsg('La hora seleccionada no corresponde a los horarios estipulados por el instructor para este día.');
+      return;
+    }
+
     // 2. Verificar disponibilidad real para evitar solapamientos
-    const existingBookings = demoStore.getBookings().filter(b => b.instructorId === instructor.id);
     const hasConflict = isSlotConflicting(existingBookings, bookingDate, bookingTime, 60);
 
     if (hasConflict) {
@@ -412,41 +460,129 @@ export default function BookingRequestPage() {
               </select>
             </div>
 
-            {/* Fecha y Hora */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Fecha deseada <span className="text-[#FF4FD8]">*</span>
-                </label>
-                <input
-                  type="date"
-                  min={todayStr}
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-[#00E5FF] cursor-pointer"
-                  required
-                />
+            {/* Días y Horarios Estipulados por el Instructor */}
+            <div className="space-y-4 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/10">
+              <div className="flex items-start gap-2.5">
+                <Calendar className="w-4 h-4 text-[#00E5FF] shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Días y Horarios de Disponibilidad Estipulados
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Solo puedes agendar en las fechas y horas oficiales estipuladas por {instructor.name} ({instructor.availabilitySchedule?.map(s => s.day).join(', ') || 'Días hábiles'}).
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Hora de inicio <span className="text-[#FF4FD8]">*</span>
-                </label>
+              {/* 1. Selector de Fecha Estipulada */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Fecha disponible estipulada <span className="text-[#FF4FD8]">*</span>
+                  </label>
+                  <span className="text-[11px] text-[#00E5FF] font-mono font-medium">
+                    {availableDateOptions.length} fechas disponibles
+                  </span>
+                </div>
+
+                {/* Dropdown con fechas exactas estipuladas */}
                 <select
-                  value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-[#00E5FF]"
+                  value={bookingDate}
+                  onChange={(e) => handleSelectDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-[#00E5FF] cursor-pointer"
                   required
                 >
-                  <option value="" disabled className="bg-[#121020] text-slate-400">
-                    Selecciona una hora disponible
-                  </option>
-                  {availableTimes.map((time) => (
-                    <option key={time} value={time} className="bg-[#121020] text-white">
-                      {time} hrs
+                  {availableDateOptions.map((opt) => (
+                    <option key={opt.dateStr} value={opt.dateStr} className="bg-[#121020] text-white">
+                      {opt.formattedLong} ({opt.times.length} horarios estipulados)
                     </option>
                   ))}
                 </select>
+
+                {/* Chips visuales de las fechas próximas para selección táctil */}
+                <div className="flex gap-2 overflow-x-auto pb-1.5 pt-1 scrollbar-thin">
+                  {availableDateOptions.slice(0, 8).map((opt) => {
+                    const isSelected = bookingDate === opt.dateStr;
+                    return (
+                      <button
+                        key={opt.dateStr}
+                        type="button"
+                        onClick={() => handleSelectDate(opt.dateStr)}
+                        className={`shrink-0 px-3 py-2 rounded-xl text-xs text-left transition-all border ${
+                          isSelected
+                            ? 'bg-[#00E5FF]/20 border-[#00E5FF] text-white shadow-[0_0_12px_rgba(0,229,255,0.35)]'
+                            : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20 hover:text-white'
+                        }`}
+                      >
+                        <span className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                          {opt.dayName}
+                        </span>
+                        <span className="block font-mono font-bold text-xs mt-0.5">
+                          {opt.formattedShort}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Horarios Estipulados para el Día Seleccionado */}
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#A3FF6F]" />
+                    <span>Horarios estipulados para {currentDateOption?.dayName || 'este día'} <span className="text-[#FF4FD8]">*</span></span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Duración: 60 minutos
+                  </span>
+                </div>
+
+                {stipulatedTimesForDate.length === 0 ? (
+                  <p className="text-xs text-amber-400">No hay horarios estipulados para este día.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {stipulatedTimesForDate.map((time) => {
+                      const isOccupied = isSlotConflicting(existingBookings, bookingDate, time, 60);
+                      const isSelected = bookingTime === time;
+
+                      return (
+                        <button
+                          key={time}
+                          type="button"
+                          disabled={isOccupied}
+                          onClick={() => setBookingTime(time)}
+                          className={`py-2.5 px-3 rounded-xl text-xs font-mono font-semibold transition-all border flex items-center justify-between ${
+                            isOccupied
+                              ? 'bg-white/[0.02] border-white/5 text-slate-500 cursor-not-allowed opacity-50'
+                              : isSelected
+                              ? 'bg-[#A3FF6F]/20 border-[#A3FF6F] text-[#A3FF6F] shadow-[0_0_12px_rgba(163,255,111,0.3)]'
+                              : 'bg-white/5 border-white/10 text-slate-200 hover:border-[#00E5FF]/40 hover:text-white'
+                          }`}
+                        >
+                          <span>{time} hrs</span>
+                          {isOccupied ? (
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-sans">
+                              Ocupado
+                            </span>
+                          ) : isSelected ? (
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-[#A3FF6F]/30 text-[#A3FF6F] font-sans">
+                              Elegido
+                            </span>
+                          ) : (
+                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/5 text-slate-400 font-sans">
+                              Disponible
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Sincronización con campos requeridos */}
+                <input type="hidden" name="bookingDate" value={bookingDate} required />
+                <input type="hidden" name="bookingTime" value={bookingTime} required />
               </div>
             </div>
 

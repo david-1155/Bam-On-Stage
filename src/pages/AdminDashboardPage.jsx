@@ -17,8 +17,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Database,
+  Copy
 } from 'lucide-react';
+import { isSupabaseConfigured, cleanSupabaseUrl, testSupabaseConnection } from '../services/supabase.js';
+import { dataService } from '../services/dataService.js';
 
 export default function AdminDashboardPage() {
   const { role, currentUser } = useAuth();
@@ -44,6 +48,12 @@ export default function AdminDashboardPage() {
   const [newAreaName, setNewAreaName] = useState('');
   const [newAreaDesc, setNewAreaDesc] = useState('');
   const [newAreaColor, setNewAreaColor] = useState('#00E5FF');
+
+  // Estado Supabase
+  const [testResult, setTestResult] = useState(null);
+  const [testing, setTesting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   const handleToggleAuthorization = (instructorId) => {
     const updated = instructors.map(i => {
@@ -157,7 +167,8 @@ export default function AdminDashboardPage() {
           { id: 'reservas', label: `Reservas Globales (${bookings.length})`, icon: Calendar },
           { id: 'areas', label: `Áreas (${areas.length})`, icon: Grid },
           { id: 'lugares', label: `Espacios (${locations.length})`, icon: MapPin },
-          { id: 'valoraciones', label: `Moderación Reseñas (${reviews.length})`, icon: Star }
+          { id: 'valoraciones', label: `Moderación Reseñas (${reviews.length})`, icon: Star },
+          { id: 'supabase', label: 'Supabase & Nube', icon: Database }
         ].map(mod => {
           const Icon = mod.icon;
           return (
@@ -519,6 +530,116 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODULO 7: GESTIÓN DE SUPABASE & NUBE */}
+      {activeModule === 'supabase' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display font-bold text-lg text-white">Configuración del Proyecto Supabase</h2>
+              <p className="text-xs text-slate-400">
+                Detalles del backend PostgreSQL, claves públicas de API y sincronización de datos.
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              ● Proyecto Conectado
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-[#121020] border border-white/10 rounded-2xl p-6 space-y-4">
+              <h3 className="font-bold text-white text-sm">Credenciales del Proyecto</h3>
+              <div className="space-y-3 text-xs font-mono">
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-slate-500 text-[10px] uppercase block">Project ID:</span>
+                  <span className="text-emerald-400 font-bold text-sm">Hrarokygesqqgzlgheuq</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-slate-500 text-[10px] uppercase block">Base API URL:</span>
+                  <span className="text-white select-all break-all">{cleanSupabaseUrl}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                  <span className="text-slate-500 text-[10px] uppercase block">Public Publishable Key:</span>
+                  <span className="text-slate-300 select-all break-all">sb_publishable_Gs2cyQDFxiumAb3siMYAqA_lFAixtCx</span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={async () => {
+                    setTesting(true);
+                    setTestResult(null);
+                    const res = await testSupabaseConnection();
+                    setTestResult(res);
+                    setTesting(false);
+                  }}
+                  disabled={testing}
+                  className="w-full py-2.5 rounded-xl bg-[#00E5FF] text-[#0A0A10] font-bold text-xs hover:bg-[#00E5FF]/90 transition-all flex items-center justify-center gap-2"
+                >
+                  <Database className="w-4 h-4" />
+                  <span>{testing ? 'Comprobando conexión...' : 'Testear Conexión con Supabase'}</span>
+                </button>
+              </div>
+
+              {testResult && (
+                <div className={`p-3.5 rounded-xl text-xs ${
+                  testResult.connected && testResult.tablesReady
+                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+                    : 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
+                }`}>
+                  <p className="font-semibold">{testResult.message}</p>
+                  {testResult.error && (
+                    <p className="text-[11px] text-amber-400 font-mono mt-1">{testResult.error}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-[#121020] border border-white/10 rounded-2xl p-6 space-y-4">
+              <h3 className="font-bold text-white text-sm">Poblado de Tablas y Migración SQL</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Si aún no has corrido el script en el <strong>SQL Editor</strong> de tu proyecto Supabase, ejecuta el archivo de migración que contiene el esquema relacional con extensiones UUID, prevención de dobles reservas y Row Level Security:
+              </p>
+
+              <div className="p-3 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between text-xs font-mono text-slate-300">
+                <span className="truncate">supabase/migrations/20261016_initial_schema.sql</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('supabase/migrations/20261016_initial_schema.sql');
+                    setCopiedSql(true);
+                    setTimeout(() => setCopiedSql(false), 2000);
+                  }}
+                  className="ml-2 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] shrink-0 flex items-center gap-1"
+                >
+                  {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedSql ? 'Copiado' : 'Copiar'}</span>
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={async () => {
+                    setSeeding(true);
+                    try {
+                      const res = await dataService.seedSupabaseTables();
+                      setNotice(`¡Sincronización completada! Se insertaron ${res.areas} áreas y ${res.locations} espacios en Supabase.`);
+                    } catch (err) {
+                      setNotice(`Aviso: ${err.message}. Asegúrate de haber ejecutado primero la migración SQL en Supabase.`);
+                    }
+                    setSeeding(false);
+                    setTimeout(() => setNotice(''), 5000);
+                  }}
+                  disabled={seeding}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-slate-950 border border-emerald-500/40 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{seeding ? 'Sincronizando...' : 'Insertar 11 Áreas y Espacios en Supabase'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

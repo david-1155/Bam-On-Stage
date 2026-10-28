@@ -597,8 +597,81 @@ const STORAGE_KEYS = {
   REVIEWS: 'bam_reviews_v1',
   LOCATIONS: 'bam_locations_v1',
   USERS: 'bam_users_v1',
-  CURRENT_USER: 'bam_current_user_v1'
+  CURRENT_USER: 'bam_current_user_v1',
+  TASKS: 'bam_tasks_v1',
+  APPLICATIONS: 'bam_applications_v1'
 };
+
+export const INITIAL_TASKS = [
+  {
+    id: 'task-1',
+    title: 'Resolver taller de derivadas por regla de la cadena (Puntos 1 al 15)',
+    description: 'Practicar los ejercicios de cálculo acordados en la asesoría con Sarah. Enfatizar en simplificación algebraica.',
+    areaSlug: 'matematicas',
+    areaName: 'Matemáticas',
+    priority: 'alta', // 'baja', 'media', 'alta'
+    dueDate: '2026-10-24',
+    completed: false,
+    assignedBy: 'Sarah Delgado (Instructora)',
+    assignedToUserId: 'student-1',
+    resourceLink: 'https://campus.institucional.edu/talleres/calculo-taller3.pdf',
+    createdAt: '2026-10-20T10:00:00.000Z'
+  },
+  {
+    id: 'task-2',
+    title: 'Implementar componente de tarjeta interactiva con Tailwind CSS',
+    description: 'Crear el mockup del catálogo de robótica con efectos hover y props tipadas como vimos en la sesión de programación.',
+    areaSlug: 'tecnologia-programacion',
+    areaName: 'Tecnología y programación',
+    priority: 'alta',
+    dueDate: '2026-10-25',
+    completed: false,
+    assignedBy: 'Mateo Silva (Instructor)',
+    assignedToUserId: 'student-1',
+    resourceLink: 'https://github.com/bam-on-stage/practica-web',
+    createdAt: '2026-10-20T14:30:00.000Z'
+  },
+  {
+    id: 'task-3',
+    title: 'Grabar audio de 3 minutos: Discurso de presentación en inglés',
+    description: 'Enfocar en la entonación de conectores como "Furthermore", "In addition" y entonación de preguntas.',
+    areaSlug: 'ingles',
+    areaName: 'Inglés',
+    priority: 'media',
+    dueDate: '2026-10-27',
+    completed: false,
+    assignedBy: 'Valeria Restrepo (Instructora)',
+    assignedToUserId: 'student-1',
+    createdAt: '2026-10-21T09:00:00.000Z'
+  },
+  {
+    id: 'task-4',
+    title: 'Boceto a grafito de figura humana con técnica de 7 cabezas',
+    description: 'Entregar dibujo exploratorio para corrección de proporciones antes de pasar a acuarelas.',
+    areaSlug: 'arte',
+    areaName: 'Arte',
+    priority: 'baja',
+    dueDate: '2026-10-29',
+    completed: true,
+    completedAt: '2026-10-21T11:00:00.000Z',
+    assignedBy: 'Diego Morales (Instructor)',
+    assignedToUserId: 'student-1',
+    createdAt: '2026-10-18T16:00:00.000Z'
+  },
+  {
+    id: 'task-5',
+    title: 'Lectura del documento de posición para Modelo ONU (Comité DDHH)',
+    description: 'Revisar antecedentes y resoluciones previas de la delegación asignada.',
+    areaSlug: 'liderazgo',
+    areaName: 'Liderazgo',
+    priority: 'media',
+    dueDate: '2026-10-28',
+    completed: false,
+    assignedBy: 'Personal (Meta propia)',
+    assignedToUserId: 'student-1',
+    createdAt: '2026-10-21T08:00:00.000Z'
+  }
+];
 
 function getStored(key, defaultValue) {
   try {
@@ -711,6 +784,112 @@ export const demoStore = {
   setCurrentUser(user) {
     setStored(STORAGE_KEYS.CURRENT_USER, user);
   },
+  getTasks() {
+    return getStored(STORAGE_KEYS.TASKS, INITIAL_TASKS);
+  },
+  createTask(taskData) {
+    const list = this.getTasks();
+    const created = {
+      ...taskData,
+      id: 'task-' + Date.now(),
+      completed: false,
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(created);
+    setStored(STORAGE_KEYS.TASKS, list);
+    return created;
+  },
+  updateTask(taskId, updates) {
+    const list = this.getTasks().map(t => {
+      if (t.id === taskId) {
+        return { ...t, ...updates, updatedAt: new Date().toISOString() };
+      }
+      return t;
+    });
+    setStored(STORAGE_KEYS.TASKS, list);
+    return list.find(t => t.id === taskId);
+  },
+  toggleTask(taskId) {
+    const list = this.getTasks().map(t => {
+      if (t.id === taskId) {
+        const nextState = !t.completed;
+        return {
+          ...t,
+          completed: nextState,
+          completedAt: nextState ? new Date().toISOString() : null
+        };
+      }
+      return t;
+    });
+    setStored(STORAGE_KEYS.TASKS, list);
+    return list.find(t => t.id === taskId);
+  },
+  deleteTask(taskId) {
+    const list = this.getTasks().filter(t => t.id !== taskId);
+    setStored(STORAGE_KEYS.TASKS, list);
+    return true;
+  },
+  getApplications() {
+    return getStored(STORAGE_KEYS.APPLICATIONS, []);
+  },
+  createInstructorApplication(application) {
+    const list = this.getApplications();
+    const createdApp = {
+      ...application,
+      id: 'app-' + Date.now(),
+      status: 'Aprobada',
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(createdApp);
+    setStored(STORAGE_KEYS.APPLICATIONS, list);
+
+    // Registrar al nuevo instructor para que quede disponible de inmediato en la plataforma
+    const instructors = this.getInstructors();
+    const existingIdx = instructors.findIndex(i =>
+      (application.userId && i.userId === application.userId) ||
+      i.name.toLowerCase() === application.fullName.toLowerCase()
+    );
+
+    const newInstructor = {
+      id: existingIdx >= 0 ? instructors[existingIdx].id : 'inst-' + Date.now(),
+      userId: application.userId || 'user-' + Date.now(),
+      name: application.fullName,
+      grade: application.grade || '10° Grado',
+      areaSlug: application.areaSlug,
+      areaName: application.areaName,
+      avatarUrl: application.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      headline: application.headline || `Instructor en ${application.areaName}`,
+      biography: application.biography || `Estudiante con talento para dar refuerzos y asesorías pedagógicas en ${application.areaName}.`,
+      topics: application.topics && application.topics.length > 0
+        ? application.topics
+        : [{ id: 'top-' + Date.now(), name: `Refuerzo General en ${application.areaName}`, priceCop: application.basePriceCop || 20000 }],
+      mode: application.mode || 'ambas',
+      locationId: 'loc-1',
+      locationName: application.locationName || 'MakerSpace o Biblioteca Central',
+      basePriceCop: application.basePriceCop || 20000,
+      nextAvailability: 'Esta semana',
+      ratingAverage: 5.0,
+      reviewsCount: 1,
+      availabilitySchedule: application.availabilitySchedule && application.availabilitySchedule.length > 0
+        ? application.availabilitySchedule
+        : [
+            { day: 'Lunes', dayIndex: 1, times: ['15:00', '16:00', '17:00'] },
+            { day: 'Miércoles', dayIndex: 3, times: ['15:00', '16:00', '17:00'] },
+            { day: 'Viernes', dayIndex: 5, times: ['14:00', '15:00', '16:00'] }
+          ],
+      isFeatured: true,
+      isAuthorized: true
+    };
+
+    if (existingIdx >= 0) {
+      instructors[existingIdx] = { ...instructors[existingIdx], ...newInstructor };
+    } else {
+      instructors.unshift(newInstructor);
+    }
+    setStored(STORAGE_KEYS.INSTRUCTORS, instructors);
+
+    return { application: createdApp, instructor: newInstructor };
+  },
   resetDemoData() {
     localStorage.removeItem(STORAGE_KEYS.AREAS);
     localStorage.removeItem(STORAGE_KEYS.INSTRUCTORS);
@@ -719,5 +898,8 @@ export const demoStore = {
     localStorage.removeItem(STORAGE_KEYS.LOCATIONS);
     localStorage.removeItem(STORAGE_KEYS.USERS);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(STORAGE_KEYS.TASKS);
+    localStorage.removeItem(STORAGE_KEYS.APPLICATIONS);
   }
 };
+

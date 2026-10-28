@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { Menu, Search, X, User, LogOut, Calendar, Shield, BookOpen, Layers } from 'lucide-react';
+import { Menu, Search, X, User, LogOut, Calendar, Shield, BookOpen, Layers, CheckSquare, GraduationCap } from 'lucide-react';
 
 export default function Navbar({ onOpenSidebar, onOpenSearch }) {
   const { currentUser, role, logout } = useAuth();
@@ -88,6 +88,16 @@ export default function Navbar({ onOpenSidebar, onOpenSearch }) {
         {/* Zone 3: Actions + Search + User + Drawer Trigger */}
         <div className="flex items-center gap-3 shrink-0">
           
+          {/* Dar Refuerzos CTA button */}
+          <Link
+            to="/dar-refuerzos"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#A3FF6F]/10 hover:bg-[#A3FF6F]/20 text-[#A3FF6F] border border-[#A3FF6F]/30 text-xs font-bold transition-all shadow-[0_0_12px_rgba(163,255,111,0.2)]"
+            title="Inscríbete para dar refuerzos académicos"
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>Dar refuerzos</span>
+          </Link>
+
           {/* Quick Search Trigger */}
           <button
             onClick={onOpenSearch}
@@ -159,6 +169,22 @@ export default function Navbar({ onOpenSidebar, onOpenSearch }) {
                   >
                     <Calendar className="w-4 h-4 text-[#FF4FD8]" />
                     Mis Reservas
+                  </Link>
+
+                  <Link
+                    to="/tareas"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    <CheckSquare className="w-4 h-4 text-[#00E5FF]" />
+                    Mis Tareas
+                  </Link>
+
+                  <Link
+                    to="/dar-refuerzos"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-[#A3FF6F] hover:text-white hover:bg-[#A3FF6F]/10 transition-colors font-medium"
+                  >
+                    <GraduationCap className="w-4 h-4 text-[#A3FF6F]" />
+                    Inscribirme para Dar Refuerzos
                   </Link>
 
                   {(role === 'instructor' || role === 'administrador') && (
